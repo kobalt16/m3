@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL CHAT</title>
+    <style>
+        /* СБРОС */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* ТЕРМИНАЛ */
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        
+        /* ШАПКА */
+        .header {
+            text-align: center;
+            padding: 10px;
+            border-bottom: 2px solid #0f0;
+            margin-bottom: 10px;
+        }
+        
+        /* СТАТУС */
+        #status {
+            background: #111;
+            border: 1px solid #0f0;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #0ff;
+        }
+        
+        /* СООБЩЕНИЯ */
+        #output {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #0a0a0a;
+        }
+        
+        .message {
+            margin-bottom: 8px;
+            padding-left: 10px;
+            border-left: 2px solid #333;
+        }
+        
+        .message.system {
+            border-left-color: #ff0;
+            color: #ff0;
+        }
+        
+        .message.user {
+            border-left-color: #0f0;
+        }
+        
+        /* ВВОД */
+        .input-area {
+            display: flex;
+            gap: 8px;
+        }
+        
+        #messageInput {
+            flex: 1;
+            background: #111;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px;
+            font-family: 'Courier New';
+            font-size: 14px;
+        }
+        
+        #sendBtn {
+            background: #0a0;
+            color: #000;
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            font-family: 'Courier New';
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>TERMINAL CHAT v1.0</h1>
+    </div>
+    
+    <div id="status">● INITIALIZING...</div>
+    
+    <div id="output">
+        <div class="message system">System ready</div>
+    </div>
+    
+    <div class="input-area">
+        <input type="text" 
+               id="messageInput" 
+               placeholder="Type message..." 
+               autofocus>
+        <button id="sendBtn" onclick="sendMessage()">SEND</button>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
