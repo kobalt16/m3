@@ -1,22 +1,29 @@
 const express = require('express');
 const app = express();
+const path = require('path');
 
-// Логирование
+// Middleware
 app.use((req, res, next) => {
-    console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
 
-// Статика
-app.use(express.static('public'));
+// Статические файлы
+app.use(express.static(path.join(__dirname, 'public')));
+
+// JSON парсер
 app.use(express.json());
 
 // Хранилище
 const messages = [
-    { user: 'SYSTEM', text: 'Terminal chat initialized', time: new Date().toLocaleTimeString() }
+    { 
+        user: 'SYSTEM', 
+        text: 'Terminal chat initialized in cloud', 
+        time: new Date().toLocaleTimeString() 
+    }
 ];
 
-// API
+// API endpoints
 app.get('/api/messages', (req, res) => {
     res.json(messages);
 });
@@ -35,21 +42,32 @@ app.post('/api/send', (req, res) => {
     };
     
     messages.push(newMsg);
-    console.log('💬 New message:', newMsg);
     
-    // Лимит
-    if (messages.length > 50) messages.shift();
+    // Ограничение истории
+    if (messages.length > 50) {
+        messages.shift();
+    }
     
     res.json({ success: true, message: newMsg });
 });
 
-// Запуск
-const PORT = 3000;
-const HOST = '127.0.0.1';
-
-app.listen(PORT, HOST, () => {
-    console.log('\n' + '='.repeat(50));
-    console.log('🚀 TERMINAL CHAT SERVER');
-    console.log('📡 http://127.0.0.1:3000');
-    console.log('='.repeat(50) + '\n');
+// Все остальные запросы → index.html
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// Экспорт для Vercel
+module.exports = app;
+
+// Локальный запуск
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    const HOST = '0.0.0.0';
+    
+    app.listen(PORT, HOST, () => {
+        console.log('\n' + '='.repeat(50));
+        console.log('🚀 TERMINAL CHAT SERVER');
+        console.log(`📍 http://localhost:${PORT}`);
+        console.log('='.repeat(50) + '\n');
+    });
+}
