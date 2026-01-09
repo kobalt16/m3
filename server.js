@@ -12,45 +12,38 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Хранилище зашифрованных сообщений
-let encryptedMessages = [];
+let messages = [];
 
 function cleanupOldMessages() {
     const now = Date.now();
     const fourMinutes = 4 * 60 * 1000;
-    const initialLength = encryptedMessages.length;
-    encryptedMessages = encryptedMessages.filter(msg => (now - msg.timestamp) < fourMinutes);
-    if (encryptedMessages.length !== initialLength) {
-        console.log(`Очистка: удалено ${initialLength - encryptedMessages.length} старых сообщений`);
+    const initialLength = messages.length;
+    messages = messages.filter(msg => (now - msg.timestamp) < fourMinutes);
+    if (messages.length !== initialLength) {
+        console.log(`Очистка: удалено ${initialLength - messages.length} старых сообщений`);
     }
 }
 
-// API - принимаем уже зашифрованные данные
 app.get('/api/messages', (req, res) => {
     cleanupOldMessages();
-    // Возвращаем зашифрованные данные как есть
-    res.json(encryptedMessages.map(msg => ({
-        encryptedData: msg.encryptedData,
-        timestamp: msg.timestamp,
-        time: msg.time
-    })));
+    res.json(messages);
 });
 
 app.post('/api/send', (req, res) => {
-    const { encryptedData } = req.body; // Клиент присылает уже зашифрованное
+    const { encryptedData } = req.body;
     
     if (!encryptedData) {
         return res.status(400).json({ error: 'No encrypted data' });
     }
     
     const newMsg = {
-        encryptedData: encryptedData,
+        encryptedData: encryptedData, // Может быть string (XOR) или object (AES)
         timestamp: Date.now(),
         time: new Date().toLocaleTimeString()
     };
     
-    encryptedMessages.push(newMsg);
-    console.log('💬 Новое зашифрованное сообщение');
+    messages.push(newMsg);
+    console.log('💬 Новое зашифрованное сообщение (AES)');
     cleanupOldMessages();
     res.json({ success: true });
 });
@@ -64,7 +57,7 @@ const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
     console.log('\n' + '='.repeat(50));
-    console.log('🚀 ENCRYPTED CHAT (4min delete)');
+    console.log('🚀 AES-ENCRYPTED CHAT (4min delete)');
     console.log(`📍 http://localhost:${PORT}`);
     console.log('='.repeat(50) + '\n');
     setInterval(cleanupOldMessages, 60000);
