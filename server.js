@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
-// Middleware
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -13,40 +12,47 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Хранилище (пустое, без системных сообщений)
-let messages = [];
+// Хранилище зашифрованных сообщений
+let encryptedMessages = [];
 
 function cleanupOldMessages() {
     const now = Date.now();
     const fourMinutes = 4 * 60 * 1000;
-    const initialLength = messages.length;
-    messages = messages.filter(msg => (now - msg.timestamp) < fourMinutes);
-    if (messages.length !== initialLength) {
-        console.log(`Очистка: удалено ${initialLength - messages.length} старых сообщений`);
+    const initialLength = encryptedMessages.length;
+    encryptedMessages = encryptedMessages.filter(msg => (now - msg.timestamp) < fourMinutes);
+    if (encryptedMessages.length !== initialLength) {
+        console.log(`Очистка: удалено ${initialLength - encryptedMessages.length} старых сообщений`);
     }
 }
 
-// API
+// API - принимаем уже зашифрованные данные
 app.get('/api/messages', (req, res) => {
     cleanupOldMessages();
-    res.json(messages);
+    // Возвращаем зашифрованные данные как есть
+    res.json(encryptedMessages.map(msg => ({
+        encryptedData: msg.encryptedData,
+        timestamp: msg.timestamp,
+        time: msg.time
+    })));
 });
 
 app.post('/api/send', (req, res) => {
-    const { user = 'USER', text } = req.body;
-    if (!text || text.trim() === '') {
-        return res.status(400).json({ error: 'Empty message' });
+    const { encryptedData } = req.body; // Клиент присылает уже зашифрованное
+    
+    if (!encryptedData) {
+        return res.status(400).json({ error: 'No encrypted data' });
     }
+    
     const newMsg = {
-        user: user.toUpperCase(),
-        text: text.trim(),
-        time: new Date().toLocaleTimeString(),
-        timestamp: Date.now()
+        encryptedData: encryptedData,
+        timestamp: Date.now(),
+        time: new Date().toLocaleTimeString()
     };
-    messages.push(newMsg);
-    console.log('💬 Новое сообщение:', newMsg.user, newMsg.text);
+    
+    encryptedMessages.push(newMsg);
+    console.log('💬 Новое зашифрованное сообщение');
     cleanupOldMessages();
-    res.json({ success: true, message: newMsg });
+    res.json({ success: true });
 });
 
 app.get('/', (req, res) => {
@@ -58,7 +64,7 @@ const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
     console.log('\n' + '='.repeat(50));
-    console.log('🚀 TERMINAL CHAT (silent 4min delete)');
+    console.log('🚀 ENCRYPTED CHAT (4min delete)');
     console.log(`📍 http://localhost:${PORT}`);
     console.log('='.repeat(50) + '\n');
     setInterval(cleanupOldMessages, 60000);

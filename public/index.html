@@ -3,31 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL CHAT</title>
+    <title>ENCRYPTED CHAT</title>
     <style>
-        /* СБРОС */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        /* ТЕРМИНАЛ */
         body {
             background: #000;
             color: #0f0;
             font-family: 'Courier New', monospace;
+            padding: 15px;
             height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
+            overflow: hidden;
         }
-        
-        /* ШАПКА */
         .header {
             text-align: center;
             padding: 10px;
             border-bottom: 2px solid #0f0;
             margin-bottom: 10px;
         }
-        
-        /* СТАТУС */
+        .password-section {
+            background: #111;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
         #status {
             background: #111;
             border: 1px solid #0f0;
@@ -36,8 +37,6 @@
             font-size: 13px;
             color: #0ff;
         }
-        
-        /* СООБЩЕНИЯ */
         #output {
             flex: 1;
             overflow-y: auto;
@@ -45,30 +44,18 @@
             padding: 10px;
             margin-bottom: 10px;
             background: #0a0a0a;
+            height: 60vh;
         }
-        
         .message {
             margin-bottom: 8px;
             padding-left: 10px;
             border-left: 2px solid #333;
         }
-        
-        .message.system {
-            border-left-color: #ff0;
-            color: #ff0;
-        }
-        
-        .message.user {
-            border-left-color: #0f0;
-        }
-        
-        /* ВВОД */
         .input-area {
             display: flex;
             gap: 8px;
         }
-        
-        #messageInput {
+        input {
             flex: 1;
             background: #111;
             color: #0f0;
@@ -77,8 +64,7 @@
             font-family: 'Courier New';
             font-size: 14px;
         }
-        
-        #sendBtn {
+        button {
             background: #0a0;
             color: #000;
             border: 1px solid #0f0;
@@ -86,26 +72,40 @@
             font-family: 'Courier New';
             font-weight: bold;
             cursor: pointer;
+            min-width: 80px;
         }
+        button:hover { background: #0f0; }
+        .password-input { width: 200px; }
+        .small-btn { padding: 10px; min-width: 60px; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>TERMINAL CHAT v1.0</h1>
+        <h1>🔒 ENCRYPTED CHAT v1.0</h1>
     </div>
     
-    <div id="status">● INITIALIZING...</div>
+    <div class="password-section">
+        <span>Пароль чата:</span>
+        <input type="password" 
+               id="chatPassword" 
+               class="password-input" 
+               placeholder="Введите общий пароль..."
+               autocomplete="off">
+        <button class="small-btn" onclick="setPassword()">ОК</button>
+    </div>
+    
+    <div id="status">● Введите пароль чата</div>
     
     <div id="output">
-        <div class="message system">System ready</div>
+        <div class="message system">Зашифрованный чат. Введите пароль для начала.</div>
     </div>
     
     <div class="input-area">
         <input type="text" 
                id="messageInput" 
-               placeholder="Type message..." 
-               autofocus>
-        <button id="sendBtn" onclick="sendMessage()">SEND</button>
+               placeholder="Сообщение (будет зашифровано)..."
+               disabled>
+        <button id="sendBtn" onclick="sendMessage()" disabled>�� SEND</button>
     </div>
     
     <script src="app.js"></script>
