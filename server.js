@@ -87,3 +87,13 @@ app.listen(PORT, HOST, () => {
 });
 
 module.exports = app;
+
+// Обработчик главной страницы
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/public/index.html');
+});
+
+// Обработчик для всех остальных путей
+app.get('*', (req, res) => {
+    res.redirect('/');
+});
