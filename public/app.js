@@ -1,18 +1,27 @@
+console.log('=== TERMINAL CHAT v2 ===');
+
 class TerminalChat {
     constructor() {
-        this.server = 'http://127.0.0.1:3000';
+        // ВАЖНО: используем текущий origin, а не localhost
+        this.server = window.location.origin;
         this.username = 'USER_' + Math.floor(Math.random() * 1000);
+        console.log('Server URL:', this.server);
+        console.log('Username:', this.username);
         this.init();
     }
     
-    init() {
+    async init() {
+        console.log('Initializing...');
         this.setupEvents();
         this.updateStatus('Connecting...', '#ff0');
-        this.loadMessages();
-        this.startPolling();
         
-        // Фокус
-        document.getElementById('messageInput').focus();
+        // Тест подключения
+        const connected = await this.testConnection();
+        if (connected) {
+            await this.loadMessages();
+            this.startPolling();
+            document.getElementById('messageInput').focus();
+        }
     }
     
     setupEvents() {
@@ -26,17 +35,38 @@ class TerminalChat {
         btn.addEventListener('click', () => this.sendMessage());
     }
     
+    async testConnection() {
+        try {
+            console.log('Testing API at:', this.server + '/api/messages');
+            const response = await fetch(this.server + '/api/messages');
+            
+            if (response.ok) {
+                console.log('✅ API connection successful');
+                this.updateStatus('CONNECTED', '#0f0');
+                return true;
+            } else {
+                console.error('❌ API error:', response.status);
+                this.updateStatus(`ERROR ${response.status}`, '#f00');
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Network error:', error.message);
+            this.updateStatus('NETWORK ERROR', '#f00');
+            return false;
+        }
+    }
+    
     updateStatus(text, color = '#0f0') {
-        const status = document.getElementById('status');
-        status.textContent = `● ${text}`;
-        status.style.color = color;
+        document.getElementById('status').textContent = `● ${text}`;
+        document.getElementById('status').style.color = color;
     }
     
     async loadMessages() {
         try {
             const response = await fetch(this.server + '/api/messages');
-            const messages = await response.json();
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
+            const messages = await response.json();
             const output = document.getElementById('output');
             output.innerHTML = '';
             
@@ -44,18 +74,18 @@ class TerminalChat {
                 const div = document.createElement('div');
                 div.className = `message ${msg.user === 'SYSTEM' ? 'system' : 'user'}`;
                 div.innerHTML = `
-                    <strong>[${msg.user}]</strong> ${msg.text}
+                    <strong>[${msg.user}]</strong> ${msg.text} 
                     <span style="float:right;color:#666">${msg.time}</span>
                 `;
                 output.appendChild(div);
             });
             
             output.scrollTop = output.scrollHeight;
-            this.updateStatus(`Connected | ${messages.length} messages`, '#0f0');
+            console.log(`Loaded ${messages.length} messages`);
             
         } catch (error) {
             console.error('Load error:', error);
-            this.updateStatus('Connection error', '#f00');
+            this.updateStatus('LOAD ERROR', '#f00');
         }
     }
     
@@ -64,6 +94,8 @@ class TerminalChat {
         const text = input.value.trim();
         
         if (!text) return;
+        
+        console.log('Sending:', text);
         
         try {
             const response = await fetch(this.server + '/api/send', {
@@ -75,28 +107,33 @@ class TerminalChat {
                 })
             });
             
-            const result = await response.json();
-            if (result.success) {
+            if (response.ok) {
                 input.value = '';
-                this.loadMessages();
+                await this.loadMessages();
+                console.log('✅ Message sent');
+            } else {
+                console.error('❌ Send failed:', response.status);
+                this.updateStatus('SEND FAILED', '#f00');
             }
         } catch (error) {
-            console.error('Send error:', error);
-            this.updateStatus('Send failed', '#f00');
+            console.error('❌ Send error:', error);
+            this.updateStatus('SEND ERROR', '#f00');
         }
     }
     
     startPolling() {
-        // Обновляем каждые 2 секунды
+        // Обновляем каждые 3 секунды
         setInterval(() => {
             this.loadMessages();
-        }, 2000);
+        }, 3000);
+        console.log('🔄 Polling started (3s interval)');
     }
 }
 
-// Запуск при загрузке
+// Запуск
 let chat;
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, starting chat...');
     chat = new TerminalChat();
 });
 
