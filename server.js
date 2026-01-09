@@ -10,29 +10,17 @@ app.use((req, res, next) => {
     next();
 });
 
-// Статические файлы с явными путями
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Хранилище
-let messages = [
-    { 
-        user: 'SYSTEM', 
-        text: 'Сообщения удаляются через 4 минуты', 
-        time: new Date().toLocaleTimeString(),
-        timestamp: Date.now(),
-        type: 'system'
-    }
-];
+// Хранилище (пустое, без системных сообщений)
+let messages = [];
 
 function cleanupOldMessages() {
     const now = Date.now();
     const fourMinutes = 4 * 60 * 1000;
     const initialLength = messages.length;
-    messages = messages.filter(msg => {
-        if (msg.type === 'system') return true;
-        return (now - msg.timestamp) < fourMinutes;
-    });
+    messages = messages.filter(msg => (now - msg.timestamp) < fourMinutes);
     if (messages.length !== initialLength) {
         console.log(`Очистка: удалено ${initialLength - messages.length} старых сообщений`);
     }
@@ -53,28 +41,24 @@ app.post('/api/send', (req, res) => {
         user: user.toUpperCase(),
         text: text.trim(),
         time: new Date().toLocaleTimeString(),
-        timestamp: Date.now(),
-        type: 'user'
+        timestamp: Date.now()
     };
     messages.push(newMsg);
     console.log('💬 Новое сообщение:', newMsg.user, newMsg.text);
-    if (messages.length > 100) messages.shift();
     cleanupOldMessages();
     res.json({ success: true, message: newMsg });
 });
 
-// Главная страница
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Запуск
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
     console.log('\n' + '='.repeat(50));
-    console.log('🚀 TERMINAL CHAT (4min auto-delete)');
+    console.log('🚀 TERMINAL CHAT (silent 4min delete)');
     console.log(`📍 http://localhost:${PORT}`);
     console.log('='.repeat(50) + '\n');
     setInterval(cleanupOldMessages, 60000);
