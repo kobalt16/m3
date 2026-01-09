@@ -1,6 +1,6 @@
-console.log('ENCRYPTED CHAT (AES) LOADED');
+console.log('M3 CHAT LOADED');
 
-class EncryptedChat {
+class M3Chat {
     constructor() {
         this.server = window.location.origin;
         this.username = 'USER_' + Math.floor(Math.random() * 1000);
@@ -11,7 +11,7 @@ class EncryptedChat {
     }
     
     init() {
-        console.log('Chat initialized, CryptoJS available:', typeof CryptoJS !== 'undefined');
+        console.log('M3 Chat initialized');
         this.setupEvents();
         this.updateStatus('Введите пароль чата (минимум 8 символов)', '#ff0');
     }
@@ -45,16 +45,15 @@ class EncryptedChat {
         this.chatPassword = password;
         this.isReady = true;
         
-        // Активируем интерфейс
         document.getElementById('messageInput').disabled = false;
         document.getElementById('sendBtn').disabled = false;
         document.getElementById('messageInput').focus();
         
-        this.updateStatus('🔐 Чат зашифрован AES-256', '#0f0');
+        this.updateStatus('Чат активен | AES-256', '#0f0');
         this.loadMessages();
         this.startPolling();
         
-        console.log('AES encryption enabled');
+        console.log('Password set, M3 chat ready');
     }
     
     updateStatus(text, color = '#0f0') {
@@ -62,28 +61,21 @@ class EncryptedChat {
         document.getElementById('status').style.color = color;
     }
     
-    // ===== AES ШИФРОВАНИЕ =====
-    
     encryptAES(text, password) {
         try {
-            // Создаём ключ из пароля
             const salt = CryptoJS.lib.WordArray.random(128/8);
             const key = CryptoJS.PBKDF2(password, salt, {
                 keySize: 256/32,
                 iterations: 1000
             });
             
-            // Случайный IV для каждого сообщения
             const iv = CryptoJS.lib.WordArray.random(128/8);
-            
-            // Шифруем
             const encrypted = CryptoJS.AES.encrypt(text, key, {
                 iv: iv,
                 mode: CryptoJS.mode.CBC,
                 padding: CryptoJS.pad.Pkcs7
             });
             
-            // Возвращаем: salt + iv + ciphertext (все в base64)
             return {
                 salt: salt.toString(CryptoJS.enc.Base64),
                 iv: iv.toString(CryptoJS.enc.Base64),
@@ -97,18 +89,15 @@ class EncryptedChat {
     
     decryptAES(encryptedData, password) {
         try {
-            // Парсим данные
             const salt = CryptoJS.enc.Base64.parse(encryptedData.salt);
             const iv = CryptoJS.enc.Base64.parse(encryptedData.iv);
             const ciphertext = CryptoJS.enc.Base64.parse(encryptedData.ciphertext);
             
-            // Восстанавливаем ключ
             const key = CryptoJS.PBKDF2(password, salt, {
                 keySize: 256/32,
                 iterations: 1000
             });
             
-            // Дешифруем
             const decrypted = CryptoJS.AES.decrypt(
                 { ciphertext: ciphertext },
                 key,
@@ -121,8 +110,6 @@ class EncryptedChat {
             return null;
         }
     }
-    
-    // ===== РАБОТА С СООБЩЕНИЯМИ =====
     
     async loadMessages() {
         if (!this.isReady) return;
@@ -140,31 +127,28 @@ class EncryptedChat {
                 div.className = 'message';
                 
                 try {
-                    // Пробуем расшифровать AES
                     if (msg.encryptedData && typeof msg.encryptedData === 'object') {
                         const decrypted = this.decryptAES(msg.encryptedData, this.chatPassword);
                         if (decrypted) {
                             div.innerHTML = `
                                 <strong>[${this.username}]</strong> ${decrypted} 
                                 <span style="float:right;color:#666">${msg.time}</span>
-                                <span style="float:right;color:#0a0;margin-right:10px">🔐</span>
                             `;
                         } else {
                             throw new Error('Decryption failed');
                         }
                     } else {
-                        // Старые XOR сообщения (для обратной совместимости)
+                        // Для обратной совместимости
                         const decrypted = this.simpleDecrypt(msg.encryptedData, this.chatPassword);
                         div.innerHTML = `
                             <strong>[${this.username}]</strong> ${decrypted} 
                             <span style="float:right;color:#666">${msg.time}</span>
-                            <span style="float:right;color:#f90;margin-right:10px">🔓</span>
                         `;
                     }
                 } catch (e) {
                     hasErrors = true;
                     div.innerHTML = `
-                        <strong>[ENCRYPTED]</strong> 🔒 
+                        <strong>[ENCRYPTED]</strong> 
                         <span style="float:right;color:#666">${msg.time}</span>
                     `;
                     div.style.color = '#666';
@@ -176,9 +160,9 @@ class EncryptedChat {
             output.scrollTop = output.scrollHeight;
             
             if (hasErrors) {
-                this.updateStatus('🔐 Часть сообщений не расшифрована (неверный пароль?)', '#f90');
+                this.updateStatus('Ошибка расшифровки (неверный пароль?)', '#f90');
             } else {
-                this.updateStatus(`🔐 Чат зашифрован (${messages.length} сообщ.)`, '#0f0');
+                this.updateStatus(`Активен | ${messages.length} сообщений`, '#0f0');
             }
             
         } catch (error) {
@@ -196,7 +180,6 @@ class EncryptedChat {
         if (!text) return;
         
         try {
-            // Шифруем AES
             const encrypted = this.encryptAES(text, this.chatPassword);
             
             if (!encrypted) {
@@ -204,7 +187,6 @@ class EncryptedChat {
                 return;
             }
             
-            // Отправляем
             const response = await fetch(this.server + '/api/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -225,7 +207,6 @@ class EncryptedChat {
         }
     }
     
-    // Старое XOR для обратной совместимости
     simpleDecrypt(encryptedBase64, key) {
         try {
             const encrypted = atob(encryptedBase64);
@@ -235,7 +216,7 @@ class EncryptedChat {
             }
             return result;
         } catch (e) {
-            return '[OLD XOR MESSAGE]';
+            return '[OLD MESSAGE]';
         }
     }
     
@@ -249,7 +230,7 @@ class EncryptedChat {
 
 let chat;
 document.addEventListener('DOMContentLoaded', () => {
-    chat = new EncryptedChat();
+    chat = new M3Chat();
 });
 
 window.setPassword = function() {
